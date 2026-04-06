@@ -1,240 +1,182 @@
-# XR1710G U-Boot
+# U-Boot XR1710G 项目分析
 
-This is a customized U-Boot port for the XR1710G. Its main features are:
+## 项目概述
 
-- 10GbE support
-- HTTP Recovery for convenient web-based firmware flashing
-- Built-in DHCP server so a connected PC can obtain an address automatically in recovery mode
-- Recovery page address: `http://192.168.255.1`
+U-Boot是一个功能强大的开源引导加载程序，专为嵌入式系统设计，支持多种处理器架构，包括PowerPC、ARM、MIPS等。本项目是U-Boot针对XR1710G平台的移植版本。
 
-## Entering HTTP Recovery
+### 主要功能
 
-1. Connect your PC to the 10GbE port and leave the NIC in DHCP / automatic address mode.
-2. Power on the router.
-3. Once the 10GbE port LED starts blinking, press and hold the `reset` button.
-4. If you are unsure about the timing, you can wait a few more seconds. Because of the chainloader, there is a fairly large timing margin here.
-5. Keep holding the button until the status LED changes from solid red to a flowing pattern, which indicates that HTTP Recovery has started.
-6. Open `http://192.168.255.1` in your browser.
+- 硬件初始化和测试
+- 引导操作系统（如Linux）
+- 支持多种引导方式（网络、存储设备等）
+- 提供命令行界面进行系统管理
+- 支持设备树（Device Tree）
+- 支持多种文件系统和存储设备
 
-Screenshot of the web page:
+## 项目结构
 
-![HTTP Recovery page screenshot](./image.png)
+U-Boot项目采用模块化设计，主要目录结构如下：
 
-## Flash Image Notes
+| 目录 | 功能 |
+|------|------|
+| api/ | 应用程序接口 |
+| arch/ | 架构相关代码 |
+| boot/ | 引导相关功能 |
+| cmd/ | 命令行命令实现 |
+| common/ | 通用功能实现 |
+| disk/ | 磁盘操作相关 |
+| doc/ | 文档 |
+| dts/ | 设备树源码 |
+| env/ | 环境变量管理 |
+| fs/ | 文件系统支持 |
+| include/ | 头文件 |
+| lib/ | 通用库函数 |
+| net/ | 网络相关功能 |
+| post/ | 开机自检 |
+| scripts/ | 构建脚本 |
+| test/ | 测试代码 |
+| tools/ | 工具程序 |
 
-- `out/u-boot.bin`
-  The raw secondary U-Boot payload produced by the build.
-- `u-boot.img`
-  One of the standard U-Boot build artifacts, but not the final flash image for the XR1710G boot chain.
-- `out/xr1710g-chainloader.itb`
-  An intermediate FIT-packaged artifact. It is usually not written to flash directly.
-- `out/xr1710g-chainloader-slot.bin`
-  The image that is actually written to the `chainloader` partition.
+## 核心功能模块
 
-Upstream reference:
+### 1. 启动流程
 
-- OpenWrt PR `#22397`: <https://github.com/openwrt/openwrt/pull/22397>
+U-Boot的启动流程主要包括以下阶段：
 
-If you are flashing the main system firmware rather than U-Boot, there are two different cases:
+1. **硬件初始化**：设置CPU、内存控制器、时钟等
+2. **环境变量初始化**：加载和解析环境变量
+3. **引导设备初始化**：初始化存储设备、网络等
+4. **自动引导**：根据配置自动引导操作系统
+5. **命令行界面**：如果自动引导失败或被中断，进入命令行界面
 
-- HTTP Recovery web upload
-  Upload the OpenWrt-generated `*-sysupgrade.itb`
-  This file is written to the `fit` volume inside the `ubi` partition
-- Low-level raw flashing
-  You may use `out/xr1710g-ubi.img`
-  This is a raw system image for the whole `ubi` partition, not the file used for HTTP Recovery upload
+启动流程的核心代码位于`common/main.c`中的`main_loop`函数。
 
-> [!WARNING]
-> - Do not flash `u-boot.bin` directly
-> - Do not treat `u-boot.img` as the final flash image
-> - The final image to flash is the packaged `xr1710g-chainloader-slot.bin`
+### 2. 引导功能
 
-## Migration From `w1700k-ubi-installer`
+U-Boot支持多种引导方式，核心引导功能在`boot/bootm.c`中实现：
 
-If the device is being switched from the older `w1700k-ubi-installer` path to
-the current XR1710G chainloader layout, the first-stage vendor U-Boot
-environment must be checked and usually updated.
+- **bootm**：引导传统格式的镜像
+- **bootz**：引导压缩的Linux镜像
+- **booti**：引导ARM64 Linux镜像
+- **bootefi**：引导EFI镜像
 
-The older installer commonly left the first-stage environment with:
+引导过程包括镜像验证、解压缩、加载到内存、传递启动参数等步骤。
 
-```sh
-bootcmd=flash read 0x600000 0x100000 $loadaddr; bootm
+### 3. 命令行界面
+
+U-Boot提供了丰富的命令行命令，位于`cmd/`目录下，主要包括：
+
+- **系统管理**：reset、version、help等
+- **内存操作**：md、mw、mm等
+- **存储操作**：flash、nand、mmc等
+- **网络操作**：ping、tftp、dhcp等
+- **引导相关**：bootm、bootz、booti等
+- **环境变量**：setenv、printenv、saveenv等
+
+### 4. 设备树支持
+
+U-Boot支持设备树（Device Tree），用于描述硬件配置，核心功能在`dts/`目录和相关文件中实现。
+
+### 5. 环境变量管理
+
+环境变量用于存储配置信息，如引导参数、网络配置等，管理功能在`env/`目录中实现。
+
+## 技术架构
+
+U-Boot采用分层架构设计：
+
+1. **硬件抽象层**：针对不同处理器架构和板卡的底层实现
+2. **核心功能层**：实现引导、命令行、存储等核心功能
+3. **应用层**：提供各种命令和工具
+
+### 关键组件
+
+- **镜像格式**：支持多种镜像格式，包括传统格式、FIT（Flattened Image Tree）格式、Android boot镜像等
+- **设备驱动**：支持各种存储设备、网络设备、输入输出设备等
+- **配置系统**：基于Kconfig的配置系统，支持灵活的功能选择
+- **构建系统**：基于Makefile的构建系统，支持交叉编译
+
+## 配置和构建
+
+### 配置
+
+U-Boot使用Kconfig配置系统，通过以下命令进行配置：
+
+```bash
+make <board_name>_defconfig
 ```
 
-That command matched the older `openwrt-airoha-an7581-gemtek_w1700k-ubi-chainload-uboot.itb`
-flow where the FIT image started directly at `0x600000`.
+对于XR1710G平台，使用：
 
-The current `xr1710g-chainloader-slot.bin` keeps the vendor `0x2100`-byte slot
-prefix, so the FIT starts at `0x602100` instead. Because of that, the old
-no-argument `bootm` form is not compatible with the current slot image.
-
-Before expecting automatic boot to work, inspect the current setting in the
-first-stage prompt:
-
-```sh
-printenv bootcmd
+```bash
+make xr1710g_defconfig
 ```
 
-The following first-stage forms are confirmed to work with the current
-`xr1710g-chainloader-slot.bin`:
+### 构建
 
-```sh
-flash read 0x602100 0x100000 0x81800000
-bootm 0x81800000
+配置完成后，使用以下命令构建U-Boot：
+
+```bash
+make
 ```
 
-or:
+如果需要交叉编译，需要设置`CROSS_COMPILE`环境变量：
 
-```sh
-flash read 0x600000 0x100000 0x81800000
-bootm 0x81802100
+```bash
+export CROSS_COMPILE=arm-linux-gnueabi-
+make
 ```
 
-The following old form is not compatible with the current slot image:
+## 开发和修改指南
 
-```sh
-flash read 0x600000 0x100000 $loadaddr
-bootm
-```
+### 修改步骤
 
-To update the persistent first-stage environment, use one of these `bootcmd`
-values:
+1. **了解代码结构**：熟悉U-Boot的目录结构和核心功能
+2. **配置修改**：根据需要修改配置文件或使用Kconfig界面
+3. **代码修改**：修改相应的源代码文件
+4. **构建测试**：构建并测试修改后的代码
+5. **调试**：使用U-Boot的调试功能进行调试
 
-```sh
-setenv bootcmd 'flash read 0x602100 0x100000 $loadaddr; bootm 0x81800000'
-saveenv
-```
+### 常用修改点
 
-or:
+- **板卡支持**：修改`board/`目录下的板卡相关代码
+- **设备驱动**：修改`drivers/`目录下的驱动代码
+- **引导参数**：修改默认环境变量或引导脚本
+- **命令扩展**：在`cmd/`目录下添加新命令
 
-```sh
-setenv bootcmd 'flash read 0x600000 0x100000 $loadaddr; bootm 0x81802100'
-saveenv
-```
+### 调试技巧
 
-## Current Partition Layout
+- **串口调试**：通过串口查看U-Boot的输出信息
+- **网络调试**：使用网络命令进行网络相关调试
+- **内存调试**：使用内存操作命令查看和修改内存
+- **环境变量**：使用环境变量保存调试信息
 
-The current flash partition layout is:
+## 常见问题与解决方案
 
-| Name | Start | Size | End |
-|---|---:|---:|---:|
-| `vendor` | `0x00000000` | `0x00600000` | `0x005FFFFF` |
-| `chainloader` | `0x00600000` | `0x00100000` | `0x006FFFFF` |
-| `ubi` | `0x00700000` | `0x1F700000` | `0x1FDFFFFF` |
-| `reserved_bmt` | `0x1FE00000` | `0x00200000` | `0x1FFFFFFF` |
+### 引导失败
 
-Inside `vendor`, the original vendor layout is still preserved:
+- **检查引导参数**：确保引导参数正确
+- **检查镜像格式**：确保镜像格式与U-Boot支持的格式匹配
+- **检查设备树**：确保设备树与硬件匹配
 
-- `bootloader`: `0x00000000-0x001FFFFF`
-- `uenv`: `0x00200000-0x003FFFFF`
-- `dsd`: `0x00400000-0x005FFFFF`
+### 网络问题
 
-This layout matches the current OP mainline layout.
-In the OpenWrt tree, the upstream XR1710G DTS added by OpenWrt PR `#22397`
-uses the same partition model and the same offsets for `vendor`,
-`chainloader`, `ubi`, and `reserved_bmt`, and it matches the existing
-`an7581-w1700k-ubi.dts` layout as well.
+- **检查网络配置**：确保IP地址、网关等配置正确
+- **检查硬件连接**：确保网络线缆连接正常
+- **检查驱动**：确保网络驱动正确加载
 
-## Flashing the Primary `tclinux` Slot from OpenWrt
+### 存储设备问题
 
-The following commands are intended for the case where:
+- **检查设备连接**：确保存储设备连接正常
+- **检查文件系统**：确保文件系统格式正确
+- **检查驱动**：确保存储设备驱动正确加载
 
-- the device is still using the original legacy vendor partition layout
-- there is not yet a dedicated `chainloader` partition
-- you want to write `out/xr1710g-chainloader-slot.bin` into the primary `tclinux` slot
+## 总结
 
-First, confirm that the partition names still match the old layout:
+U-Boot是一个功能强大、灵活可扩展的引导加载程序，为嵌入式系统提供了可靠的引导解决方案。通过本项目分析，您应该对U-Boot的结构、功能和使用方法有了更深入的了解，便于进行后续的修改和扩展。
 
-```sh
-grep -E 'tclinux|tclinux_slave' /proc/mtd
-```
+## 参考资料
 
-If the primary slot is still `tclinux`, it is typically `/dev/mtd5`. It is recommended to overwrite only the first `1 MiB` of that slot. Do not use `sysupgrade`, and do not directly `mtd write ... tclinux` over the entire `64 MiB` slot.
-
-Assuming the image has already been copied to `/tmp/xr1710g-chainloader-slot.bin` on the device, run:
-
-```sh
-# Optional: back up the first 1 MiB of the primary slot
-nanddump -l 0x100000 -f /tmp/tclinux-head-1m.bin /dev/mtd5
-
-# Erase the first 1 MiB (8 erase blocks of 128 KiB each)
-flash_erase /dev/mtd5 0 8
-
-# Write the chainloader slot image to the start of the primary slot
-nandwrite -p /dev/mtd5 /tmp/xr1710g-chainloader-slot.bin
-
-sync
-reboot
-```
-
-Additional notes:
-
-- The image written here is `out/xr1710g-chainloader-slot.bin`, not `u-boot.bin`
-- These commands apply to the old layout where the primary slot is `tclinux`
-- If the device has already been migrated to the new `vendor + chainloader + ubi` layout, write the `chainloader` partition directly instead of writing `tclinux`
-
-## Why the Raw Build Artifact Cannot Be Flashed Directly
-
-The vendor boot chain follows a `bootm` path and cannot boot a bare `u-boot.bin` directly.
-
-Because of that, the U-Boot in this project is used as a secondary payload. An outer wrapper with a Linux `Image`-style header and a chainloader package must be added so that the vendor `bootm` path will accept it. That outer wrapper first boots a shim, and the shim then jumps to the real `u-boot.bin`.
-
-In other words, the U-Boot artifact produced by the build cannot be flashed directly. It must first be packaged into a chainloader image with the required Linux-style header.
-
-## Files Required for Packaging
-
-To package the raw U-Boot payload into a flashable chainloader image, prepare:
-
-- Raw secondary payload: `u-boot.bin`
-- Vendor slot image, for example `mtd5_tclinux.bin`
-  Used to preserve the first `0x2100` bytes of the original vendor image
-- Shim: `chainloader-shim.bin`
-- Control DTB: `chainloader-control.dtb`
-- `u-boot/tools/mkimage`
-- `u-boot/tools/dumpimage`
-
-The resulting packaged artifacts are typically:
-
-- `out/xr1710g-chainloader.itb`
-- `out/xr1710g-chainloader-slot.bin`
-
-Reference: simplified `build-chainloader-fit.sh` script contents, keeping only the core packaging logic:
-
-```sh
-#!/usr/bin/env sh
-set -eu
-
-stock_slot=xr1710g-backup/mtd5_tclinux.bin
-shim=out/chainloader-shim.bin
-payload=out/u-boot.bin
-dtb=out/chainloader-control.dtb
-output_fit=out/xr1710g-chainloader.itb
-output_slot=out/xr1710g-chainloader-slot.bin
-mkimage=u-boot/tools/mkimage
-dumpimage=u-boot/tools/dumpimage
-template=xr1710g-chainloader.its.in
-tmpdir=$(mktemp -d)
-its="$tmpdir/xr1710g-chainloader.its"
-
-sed \
-  -e "s|__DTB__|$dtb|g" \
-  -e "s|__SHIM__|$shim|g" \
-  -e "s|__PAYLOAD__|$payload|g" \
-  -e "s|__KCOMP__|none|g" \
-  "$template" > "$its"
-
-"$mkimage" -f "$its" "$output_fit"
-"$dumpimage" -l "$output_fit"
-
-# Preserve the first 0x2100 bytes of the original vendor tclinux slot,
-# then append the new FIT image
-head -c $((0x2100)) "$stock_slot" > "$output_slot"
-cat "$output_fit" >> "$output_slot"
-
-```
-
-## Reference Projects
-
-- U-Boot official homepage: <https://u-boot.org/>
-- U-Boot official documentation: <https://docs.u-boot.org/>
-- U-Boot official source repository: <https://source.denx.de/u-boot/u-boot>
+- [U-Boot官方文档](https://www.denx.de/wiki/U-Boot)
+- [U-Boot源代码](https://source.denx.de/u-boot/u-boot)
+- [嵌入式Linux系统开发](https://www.embeddedlinux.org.cn/)

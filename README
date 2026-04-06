@@ -4,6 +4,8 @@ XR1710G Notes:
 Project-specific usage and flashing notes for the XR1710G port live in
 README.md in this directory.
 
+详细的项目分析文档也位于README.md文件中，包含了U-Boot的核心功能、架构、配置方法和开发指南等内容。
+
 The remainder of this file is the upstream U-Boot README.
 
  # SPDX-License-Identifier: GPL-2.0+
