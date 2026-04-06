@@ -1,385 +1,893 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XR1710G Recovery</title>
-<style>
-:root{
-  --ink:#1a2530;
-  --muted:#677786;
-  --panel:#ffffff;
-  --panel-2:#f4f7f9;
-  --line:rgba(26,37,48,.1);
-  --accent:#de6b3a;
-  --accent-2:#348ea3;
-  --bg-1:#f7f4ef;
-  --bg-2:#eef3f6;
-  --bg-3:#ffffff;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:Georgia,"Times New Roman",serif;
-  color:var(--ink);
-  background:
-    radial-gradient(circle at top, rgba(222,107,58,.08), transparent 24%),
-    linear-gradient(180deg, var(--bg-1), var(--bg-2) 52%, var(--bg-3));
-}
-.shell{
-  max-width:860px;
-  margin:0 auto;
-  padding:30px 16px 42px;
-}
-.hero{
-  border:1px solid var(--line);
-  border-radius:24px;
-  padding:24px 22px 20px;
-  background:linear-gradient(180deg, var(--panel), var(--panel-2));
-  box-shadow:0 22px 50px rgba(26,37,48,.08);
-}
-.eyebrow{
-  margin:0;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  font-size:12px;
-  color:var(--muted);
-}
-h1{
-  margin:10px 0 8px;
-  font-size:36px;
-  line-height:1.02;
-}
-.lead,.meta,.note{
-  margin:0;
-  color:var(--muted);
-}
-.lead{font-size:15px}
-.meta{font-size:12px;margin-top:14px}
-.note{font-size:13px;margin-top:10px}
-.toolbar{
-  display:grid;
-  grid-template-columns:1.35fr .85fr auto;
-  gap:10px;
-  margin-top:22px;
-}
-input,select,button{
-  width:100%;
-  border-radius:14px;
-  font:inherit;
-}
-input,select{
-  border:1px solid rgba(26,37,48,.12);
-  padding:13px 14px;
-  color:#18232d;
-  background:#ffffff;
-}
-button{
-  border:0;
-  padding:13px 18px;
-  color:#fffaf8;
-  font-weight:700;
-  background:linear-gradient(90deg, var(--accent), #f59a5c);
-  cursor:pointer;
-}
-button.secondary{
-  background:linear-gradient(90deg, var(--accent-2), #63b6c5);
-}
-button:disabled{opacity:.6;cursor:default}
-.targets{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-top:18px;
-}
-.target{
-  padding:16px;
-  border-radius:18px;
-  border:1px solid rgba(26,37,48,.08);
-  background:#fbfcfd;
-}
-.target.active{
-  border-color:rgba(222,107,58,.3);
-  background:linear-gradient(180deg, rgba(222,107,58,.08), rgba(255,255,255,1));
-}
-.target h2{
-  margin:0 0 8px;
-  font-size:20px;
-}
-.target p{
-  margin:0;
-  color:var(--muted);
-  line-height:1.5;
-  font-size:14px;
-}
-.progress{
-  display:none;
-  margin-top:20px;
-}
-.progress-row{margin-top:12px}
-.progress-label{
-  margin-bottom:6px;
-  color:#465662;
-  font-size:13px;
-}
-.progress-bar{
-  position:relative;
-  overflow:hidden;
-  border-radius:999px;
-  background:#e7edf1;
-  height:24px;
-}
-.progress-fill{
-  position:absolute;
-  inset:0 auto 0 0;
-  width:0;
-  background:linear-gradient(90deg, #6aa9db, #93ccef);
-  transition:width .25s ease;
-}
-.progress-fill.complete{
-  background:linear-gradient(90deg, var(--accent-2), #8ad7c9);
-}
-.progress-fill.inactive{
-  background:#d6dfe5;
-}
-.progress-text{
-  position:relative;
-  z-index:1;
-  line-height:24px;
-  text-align:center;
-  font-size:12px;
-}
-#reboot-msg{
-  display:none;
-  margin-top:14px;
-  color:#80502f;
-}
-#log{
-  margin-top:18px;
-  min-height:150px;
-  padding:14px;
-  white-space:pre-wrap;
-  border-radius:18px;
-  border:1px solid rgba(26,37,48,.1);
-  background:#f7fafc;
-  font:12px/1.5 "Courier New",monospace;
-  overflow:auto;
-}
-@media (max-width:720px){
-  .toolbar,.targets{grid-template-columns:1fr}
-  h1{font-size:30px}
-}
-</style>
-</head>
-<body>
-<div class="shell">
-  <section class="hero">
-    <p class="eyebrow">XR1710G Recovery</p>
-    <h1>Upload firmware or chainloader</h1>
-    <p class="lead">Recovery endpoint: <strong>192.168.255.1</strong></p>
-    <p class="note">`firmware` writes `ubi:fit`, `uboot` writes the raw chainloader slot.</p>
-
-    <div class="targets">
-      <div class="target active" id="card-firmware">
-        <h2>firmware</h2>
-        <p>OpenWrt FIT image</p>
-      </div>
-      <div class="target" id="card-uboot">
-        <h2>uboot</h2>
-        <p>`xr1710g-chainloader-slot.bin`</p>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <input id="f" type="file">
-      <select id="t" onchange="changeTarget()">
-        <option value="firmware">firmware</option>
-        <option value="uboot">uboot</option>
-      </select>
-      <button id="btn" onclick="upload()">Upload</button>
-    </div>
-
-    <div class="progress" id="progress">
-      <div class="progress-row">
-        <div class="progress-label">Erase</div>
-        <div class="progress-bar">
-          <div class="progress-fill inactive" id="erase-fill"></div>
-          <div class="progress-text" id="erase-text">0%</div>
-        </div>
-      </div>
-      <div class="progress-row">
-        <div class="progress-label">Write</div>
-        <div class="progress-bar">
-          <div class="progress-fill inactive" id="write-fill"></div>
-          <div class="progress-text" id="write-text">0%</div>
-        </div>
-      </div>
-    </div>
-
-    <p id="reboot-msg">Flash complete. Rebooting in <strong id="reboot-sec">3</strong>s.</p>
-    <div id="log"></div>
-    <p class="meta" id="meta">Loading U-Boot version...</p>
-  </section>
-</div>
-<script>
-var pollTimer = null;
-var lastPhase = 0;
-var countdownStarted = false;
-
-function log(msg) {
-  var box = document.getElementById("log");
-  box.textContent += msg + "\n";
-  box.scrollTop = box.scrollHeight;
-}
-
-function changeTarget() {
-  var target = document.getElementById("t").value;
-  document.getElementById("card-firmware").className =
-    "target" + (target === "firmware" ? " active" : "");
-  document.getElementById("card-uboot").className =
-    "target" + (target === "uboot" ? " active" : "");
-  document.getElementById("btn").className =
-    target === "uboot" ? "secondary" : "";
-}
-
-function setProgress(phase, pct, detail) {
-  var eraseFill = document.getElementById("erase-fill");
-  var writeFill = document.getElementById("write-fill");
-  var eraseText = document.getElementById("erase-text");
-  var writeText = document.getElementById("write-text");
-
-  if (phase === 1) {
-    eraseFill.className = "progress-fill";
-    eraseFill.style.width = pct + "%";
-    eraseText.textContent = pct + "%" + detail;
-    writeFill.className = "progress-fill inactive";
-    writeFill.style.width = "0%";
-    writeText.textContent = "0%";
-    if (lastPhase !== 1) {
-      log("Erasing target...");
-      lastPhase = 1;
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>XR1710G Recovery</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #10b981;
+      --secondary-dark: #059669;
+      --accent: #f59e0b;
+      --accent-dark: #d97706;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --border: #e2e8f0;
+      --border-light: #f1f5f9;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
     }
-  } else if (phase === 2) {
-    eraseFill.className = "progress-fill complete";
-    eraseFill.style.width = "100%";
-    eraseText.textContent = "100%";
-    writeFill.className = "progress-fill";
-    writeFill.style.width = pct + "%";
-    writeText.textContent = pct + "%" + detail;
-    if (lastPhase !== 2) {
-      log("Writing target...");
-      lastPhase = 2;
+
+    * {
+      box-sizing: border-box
     }
-  } else if (phase === 3) {
-    eraseFill.className = "progress-fill complete";
-    eraseFill.style.width = "100%";
-    eraseText.textContent = "100%";
-    writeFill.className = "progress-fill complete";
-    writeFill.style.width = "100%";
-    writeText.textContent = "100%";
-  }
-}
 
-function showProgress(show) {
-  document.getElementById("progress").style.display = show ? "block" : "none";
-}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: linear-gradient(135deg, var(--bg-primary), var(--bg-tertiary));
+    }
 
-function startCountdown(seconds) {
-  if (countdownStarted)
-    return;
-  countdownStarted = true;
-  document.getElementById("reboot-msg").style.display = "block";
-  document.getElementById("reboot-sec").textContent = String(seconds);
-  function tick(left) {
-    if (left <= 0)
-      return;
-    document.getElementById("reboot-sec").textContent = String(left);
-    setTimeout(function() { tick(left - 1); }, 1000);
-  }
-  setTimeout(function() { tick(seconds - 1); }, 1000);
-}
+    .shell {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+    }
 
-async function pollStatus() {
-  try {
-    var response = await fetch("/status");
-    var data = await response.json();
-    if (data.in_progress) {
-      var phase = data.phase || 0;
-      var pct = 0;
-      var detail = "";
-      if (phase === 1) {
-        pct = data.erase_total ? Math.round(data.erase_done * 100 / data.erase_total) : 0;
-        detail = " (" + Math.round((data.erase_done || 0) / 1024) + "KB/" +
-                 Math.round((data.erase_total || 0) / 1024) + "KB)";
-      } else if (phase === 2) {
-        pct = data.write_total ? Math.round(data.write_done * 100 / data.write_total) : 0;
-        detail = " (" + Math.round((data.write_done || 0) / 1024) + "KB/" +
-                 Math.round((data.write_total || 0) / 1024) + "KB)";
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 32px 28px 28px;
+      background: var(--bg-secondary);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+    }
+
+    .hero:hover {
+      box-shadow: 0 32px 64px rgba(0, 0, 0, 0.1), 0 12px 24px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .eyebrow {
+      margin: 0;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    h1 {
+      margin: 12px 0 10px;
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.05;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .lead,
+    .meta,
+    .note {
+      margin: 0;
+      color: var(--text-secondary);
+    }
+
+    .lead {
+      font-size: 16px;
+      line-height: 1.5
+    }
+
+    .meta {
+      font-size: 13px;
+      margin-top: 16px
+    }
+
+    .note {
+      font-size: 14px;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--bg-tertiary)
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.35fr .85fr auto;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      border-radius: 16px;
+      font: inherit;
+      transition: all 0.2s ease;
+    }
+
+    input,
+    select {
+      border: 2px solid var(--border);
+      padding: 14px 16px;
+      color: var(--text-primary);
+      background: var(--bg-secondary);
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    button {
+      border: 0;
+      padding: 14px 20px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    button.secondary {
+      background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    button.secondary:active:not(:disabled) {
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: default;
+      transform: none;
+      box-shadow: none
+    }
+
+    .targets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .target {
+      padding: 20px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--bg-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .target:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .target.active {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), var(--bg-secondary));
+      box-shadow: 0 8px 16px rgba(59, 130, 246, 0.1);
+    }
+
+    .target h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .target p {
+      margin: 0;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .progress {
+      display: none;
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--bg-tertiary);
+    }
+
+    .progress-row {
+      margin-top: 16px
+    }
+
+    .progress-row:first-child {
+      margin-top: 0
+    }
+
+    .progress-label {
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .progress-bar {
+      position: relative;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--bg-secondary);
+      height: 28px;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0;
+      background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+      transition: width .3s ease;
+      border-radius: 999px;
+    }
+
+    .progress-fill.complete {
+      background: linear-gradient(90deg, var(--secondary), var(--secondary-dark));
+    }
+
+    .progress-fill.inactive {
+      background: var(--border);
+    }
+
+    .progress-text {
+      position: relative;
+      z-index: 1;
+      line-height: 28px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    #reboot-msg {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--secondary-dark);
+      font-weight: 500;
+    }
+
+    #log {
+      margin-top: 24px;
+      min-height: 180px;
+      padding: 16px;
+      white-space: pre-wrap;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      font: 13px/1.5 "Courier New", monospace;
+      overflow: auto;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    @media (max-width:720px) {
+
+      .toolbar,
+      .targets {
+        grid-template-columns: 1fr
       }
-      setProgress(phase, pct, detail);
-    } else if (data.ok) {
-      setProgress(3, 100, "");
-      log("Upload successful.");
-      startCountdown(3);
-      clearInterval(pollTimer);
-    } else if (data.error) {
-      log("Upload failed.");
-      clearInterval(pollTimer);
-      showProgress(false);
-      document.getElementById("btn").disabled = false;
+
+      h1 {
+        font-size: 32px
+      }
+
+      .shell {
+        padding: 30px 16px 40px
+      }
+
+      .hero {
+        padding: 24px 20px 20px
+      }
     }
-  } catch (err) {
-  }
-}
+  </style>
+</head>
 
-async function upload() {
-  var btn = document.getElementById("btn");
-  var file = document.getElementById("f").files[0];
-  var target = document.getElementById("t").value;
-  if (!file) {
-    log("No file selected.");
-    return;
-  }
+<body>
+  <div class="shell">
+    <section class="hero">
+      <p class="eyebrow">XR1710G Recovery</p>
+      <h1>Upload firmware or chainloader</h1>
+      <p class="lead">Recovery endpoint: <strong>192.168.255.1</strong></p>
+      <p class="note">`firmware` writes `ubi:fit`, `uboot` writes the raw chainloader slot.</p>
 
-  btn.disabled = true;
-  showProgress(true);
-  lastPhase = 0;
-  countdownStarted = false;
-  document.getElementById("reboot-msg").style.display = "none";
-  log("Uploading " + file.name + " to " + target + "...");
-  if (pollTimer)
-    clearInterval(pollTimer);
-  pollTimer = setInterval(pollStatus, 500);
+      <div class="system-info" id="system-info">
+        <h3>System Information</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">U-Boot Version:</span>
+            <span class="info-value" id="uboot-version">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Board Model:</span>
+            <span class="info-value" id="board-model">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">MAC Address:</span>
+            <span class="info-value" id="mac-address">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Free Space:</span>
+            <span class="info-value" id="free-space">Loading...</span>
+          </div>
+        </div>
+      </div>
 
-  try {
-    var response = await fetch("/upload/" + target, {
-      method: "POST",
-      headers: { "Content-Type": "application/octet-stream" },
-      body: file
-    });
-    if (!response.ok)
-      log("Server responded with HTTP " + response.status + ".");
-  } catch (err) {
-    log("Upload error: " + err);
-    clearInterval(pollTimer);
-    showProgress(false);
-    btn.disabled = false;
-  }
-}
+      <div class="network-info" id="network-info">
+        <h3>Network Status</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Ethernet 0:</span>
+            <span class="info-value" id="eth0-status">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Ethernet 1:</span>
+            <span class="info-value" id="eth1-status">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Ethernet 2:</span>
+            <span class="info-value" id="eth2-status">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Ethernet 3:</span>
+            <span class="info-value" id="eth3-status">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Driver Status:</span>
+            <span class="info-value" id="driver-status">Loading...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">IP Address:</span>
+            <span class="info-value" id="ip-address">Loading...</span>
+          </div>
+        </div>
+      </div>
 
-(async function() {
-  changeTarget();
-  try {
-    var response = await fetch("/about");
-    if (!response.ok)
-      return;
-    var data = await response.json();
-    if (data && data.u_boot)
-      document.getElementById("meta").textContent = data.u_boot;
-  } catch (err) {
-  }
-})();
-</script>
+      <div class="targets">
+        <div class="target active" id="card-firmware" onclick="switchTarget('firmware')">
+          <h2>firmware</h2>
+          <p>OpenWrt FIT image</p>
+        </div>
+        <div class="target" id="card-uboot" onclick="switchTarget('uboot')">
+          <h2>uboot</h2>
+          <p>`xr1710g-chainloader-slot.bin`</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input id="f" type="file" onchange="validateFile()">
+        <select id="t" onchange="changeTarget()">
+          <option value="firmware">firmware</option>
+          <option value="uboot">uboot</option>
+        </select>
+        <button id="btn" onclick="upload()">Upload</button>
+      </div>
+
+      <div class="file-info" id="file-info" style="display: none;">
+        <h3>File Information</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">File Name:</span>
+            <span class="info-value" id="file-name">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">File Size:</span>
+            <span class="info-value" id="file-size">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">File Type:</span>
+            <span class="info-value" id="file-type">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Validation:</span>
+            <span class="info-value" id="file-validation">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress" id="progress">
+        <div class="progress-row">
+          <div class="progress-label">Erase</div>
+          <div class="progress-bar">
+            <div class="progress-fill inactive" id="erase-fill"></div>
+            <div class="progress-text" id="erase-text">0%</div>
+          </div>
+        </div>
+        <div class="progress-row">
+          <div class="progress-label">Write</div>
+          <div class="progress-bar">
+            <div class="progress-fill inactive" id="write-fill"></div>
+            <div class="progress-text" id="write-text">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <p id="reboot-msg">Flash complete. Rebooting in <strong id="reboot-sec">3</strong>s.</p>
+      <div id="log"></div>
+      <p class="meta" id="meta">Ready</p>
+    </section>
+  </div>
+  <style>
+    .system-info,
+    .network-info,
+    .file-info {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+    }
+
+    .system-info h3,
+    .network-info h3,
+    .file-info h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    @media (max-width: 720px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script>
+    var pollTimer = null;
+    var lastPhase = 0;
+    var countdownStarted = false;
+
+    function log(msg) {
+      var box = document.getElementById("log");
+      box.textContent += msg + "\n";
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function changeTarget() {
+      var target = document.getElementById("t").value;
+      updateTargetUI(target);
+    }
+
+    function switchTarget(target) {
+      document.getElementById("t").value = target;
+      updateTargetUI(target);
+    }
+
+    function updateTargetUI(target) {
+      document.getElementById("card-firmware").className =
+        "target" + (target === "firmware" ? " active" : "");
+      document.getElementById("card-uboot").className =
+        "target" + (target === "uboot" ? " active" : "");
+      document.getElementById("btn").className =
+        target === "uboot" ? "secondary" : "";
+
+      // Validate file again when target changes
+      validateFile();
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function validateFile() {
+      var file = document.getElementById("f").files[0];
+      var target = document.getElementById("t").value;
+      var fileInfo = document.getElementById("file-info");
+      var fileName = document.getElementById("file-name");
+      var fileSize = document.getElementById("file-size");
+      var fileType = document.getElementById("file-type");
+      var fileValidation = document.getElementById("file-validation");
+      var btn = document.getElementById("btn");
+
+      if (!file) {
+        fileInfo.style.display = "none";
+        btn.disabled = true;
+        return;
+      }
+
+      // Show file information
+      fileInfo.style.display = "block";
+      fileName.textContent = file.name;
+      fileSize.textContent = formatFileSize(file.size);
+      fileType.textContent = file.type || 'Binary file';
+
+      // Validate file based on target
+      let isValid = false;
+      let validationMessage = '';
+
+      // Check file size (32MB limit by default)
+      const MAX_FILE_SIZE = 32 * 1024 * 1024; // 32MB
+      if (file.size > MAX_FILE_SIZE) {
+        validationMessage = '<span style="color: var(--error)">✗ File too large. Maximum size is 32MB</span>';
+        fileValidation.innerHTML = validationMessage;
+        btn.disabled = true;
+        return;
+      }
+
+      if (target === "firmware") {
+        // Check for FIT image characteristics
+        if (file.name.endsWith('.bin') || file.name.endsWith('.itb')) {
+          isValid = true;
+          validationMessage = '<span style="color: var(--success)">✓ Valid FIT image</span>';
+        } else {
+          validationMessage = '<span style="color: var(--error)">✗ Invalid file type. Expected .bin or .itb</span>';
+        }
+      } else if (target === "uboot") {
+        // Check for chainloader file
+        if (file.name.includes('chainloader') && file.name.endsWith('.bin')) {
+          isValid = true;
+          validationMessage = '<span style="color: var(--success)">✓ Valid chainloader</span>';
+        } else {
+          validationMessage = '<span style="color: var(--error)">✗ Invalid file. Expected chainloader bin file</span>';
+        }
+      }
+
+      fileValidation.innerHTML = validationMessage;
+      btn.disabled = !isValid;
+    }
+
+    function setProgress(phase, pct, detail) {
+      var eraseFill = document.getElementById("erase-fill");
+      var writeFill = document.getElementById("write-fill");
+      var eraseText = document.getElementById("erase-text");
+      var writeText = document.getElementById("write-text");
+
+      if (phase === 1) {
+        eraseFill.className = "progress-fill";
+        eraseFill.style.width = pct + "%";
+        eraseText.textContent = pct + "%" + detail;
+        writeFill.className = "progress-fill inactive";
+        writeFill.style.width = "0%";
+        writeText.textContent = "0%";
+        if (lastPhase !== 1) {
+          log("Erasing target...");
+          lastPhase = 1;
+        }
+      } else if (phase === 2) {
+        eraseFill.className = "progress-fill complete";
+        eraseFill.style.width = "100%";
+        eraseText.textContent = "100%";
+        writeFill.className = "progress-fill";
+        writeFill.style.width = pct + "%";
+        writeText.textContent = pct + "%" + detail;
+        if (lastPhase !== 2) {
+          log("Writing target...");
+          lastPhase = 2;
+        }
+      } else if (phase === 3) {
+        eraseFill.className = "progress-fill complete";
+        eraseFill.style.width = "100%";
+        eraseText.textContent = "100%";
+        writeFill.className = "progress-fill complete";
+        writeFill.style.width = "100%";
+        writeText.textContent = "100%";
+      }
+    }
+
+    function showProgress(show) {
+      document.getElementById("progress").style.display = show ? "block" : "none";
+    }
+
+    function startCountdown(seconds) {
+      if (countdownStarted)
+        return;
+      countdownStarted = true;
+      document.getElementById("reboot-msg").style.display = "block";
+      document.getElementById("reboot-sec").textContent = String(seconds);
+      function tick(left) {
+        if (left <= 0)
+          return;
+        document.getElementById("reboot-sec").textContent = String(left);
+        setTimeout(function () { tick(left - 1); }, 1000);
+      }
+      setTimeout(function () { tick(seconds - 1); }, 1000);
+    }
+
+    async function pollStatus() {
+      try {
+        var response = await fetch("/status");
+        var data = await response.json();
+        if (data.in_progress) {
+          var phase = data.phase || 0;
+          var pct = 0;
+          var detail = "";
+          if (phase === 1) {
+            pct = data.erase_total ? Math.round(data.erase_done * 100 / data.erase_total) : 0;
+            detail = " (" + Math.round((data.erase_done || 0) / 1024) + "KB/" +
+              Math.round((data.erase_total || 0) / 1024) + "KB)";
+          } else if (phase === 2) {
+            pct = data.write_total ? Math.round(data.write_done * 100 / data.write_total) : 0;
+            detail = " (" + Math.round((data.write_done || 0) / 1024) + "KB/" +
+              Math.round((data.write_total || 0) / 1024) + "KB)";
+          }
+          setProgress(phase, pct, detail);
+        } else if (data.ok) {
+          setProgress(3, 100, "");
+          log("Upload successful.");
+          startCountdown(3);
+          clearInterval(pollTimer);
+        } else if (data.error) {
+          log("Upload failed: " + (data.error.message || "Unknown error"));
+          clearInterval(pollTimer);
+          showProgress(false);
+          document.getElementById("btn").disabled = false;
+        }
+      } catch (err) {
+        log("Status poll error: " + err.message);
+      }
+    }
+
+    async function upload() {
+      var btn = document.getElementById("btn");
+      var file = document.getElementById("f").files[0];
+      var target = document.getElementById("t").value;
+
+      if (!file) {
+        log("No file selected.");
+        return;
+      }
+
+      btn.disabled = true;
+      showProgress(true);
+      lastPhase = 0;
+      countdownStarted = false;
+      document.getElementById("reboot-msg").style.display = "none";
+      log("Uploading " + file.name + " to " + target + "...");
+      log(`File size: ${formatFileSize(file.size)}`);
+      if (pollTimer)
+        clearInterval(pollTimer);
+      pollTimer = setInterval(pollStatus, 500);
+
+      try {
+        // Show upload progress
+        const xhr = new XMLHttpRequest();
+
+        // Set timeout for large file uploads (10 minutes)
+        xhr.timeout = 10 * 60 * 1000;
+
+        xhr.upload.addEventListener('progress', function (e) {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            const uploadedSize = formatFileSize(e.loaded);
+            const totalSize = formatFileSize(e.total);
+            log(`Uploading: ${percent}% (${uploadedSize}/${totalSize})`);
+          }
+        });
+
+        xhr.addEventListener('load', function () {
+          if (xhr.status === 200) {
+            log("Upload completed successfully.");
+          } else if (xhr.status === 413) {
+            log("Upload failed: File too large. Maximum size is 32MB");
+            clearInterval(pollTimer);
+            showProgress(false);
+            btn.disabled = false;
+          } else {
+            log(`Server responded with HTTP ${xhr.status}: ${xhr.statusText}`);
+            clearInterval(pollTimer);
+            showProgress(false);
+            btn.disabled = false;
+          }
+        });
+
+        xhr.addEventListener('error', function () {
+          log("Upload failed: Network error. Please check your connection and try again.");
+          clearInterval(pollTimer);
+          showProgress(false);
+          btn.disabled = false;
+        });
+
+        xhr.addEventListener('timeout', function () {
+          log("Upload failed: Timeout. Large files may take longer to upload.");
+          clearInterval(pollTimer);
+          showProgress(false);
+          btn.disabled = false;
+        });
+
+        xhr.open('POST', `/upload/${target}`);
+        xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+        xhr.send(file);
+      } catch (err) {
+        log("Upload error: " + err.message);
+        clearInterval(pollTimer);
+        showProgress(false);
+        btn.disabled = false;
+      }
+    }
+
+    async function getSystemInfo() {
+      try {
+        var response = await fetch("/about");
+        if (!response.ok) {
+          log("Failed to get system info");
+          return;
+        }
+        var data = await response.json();
+
+        // Update system information
+        if (data && data.u_boot) {
+          document.getElementById("uboot-version").textContent = data.u_boot;
+          document.getElementById("meta").textContent = data.u_boot;
+        }
+
+        if (data && data.board) {
+          document.getElementById("board-model").textContent = data.board;
+        }
+
+        if (data && data.mac) {
+          document.getElementById("mac-address").textContent = data.mac;
+        }
+
+        if (data && data.free_space) {
+          document.getElementById("free-space").textContent = formatFileSize(data.free_space);
+        }
+
+        // Update network information if available
+        if (data && data.network) {
+          updateNetworkInfo(data.network);
+        }
+      } catch (err) {
+        log("Error getting system info: " + err);
+      }
+    }
+
+    async function getNetworkInfo() {
+      try {
+        var response = await fetch("/network");
+        if (!response.ok) {
+          log("Failed to get network info");
+          return;
+        }
+        var data = await response.json();
+        updateNetworkInfo(data);
+      } catch (err) {
+        log("Error getting network info: " + err);
+      }
+    }
+
+    function updateNetworkInfo(networkData) {
+      // Update Ethernet status
+      if (networkData.eth0) {
+        const eth0Status = document.getElementById("eth0-status");
+        if (networkData.eth0.link) {
+          eth0Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+        } else {
+          eth0Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+        }
+      }
+
+      if (networkData.eth1) {
+        const eth1Status = document.getElementById("eth1-status");
+        if (networkData.eth1.link) {
+          eth1Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+        } else {
+          eth1Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+        }
+      }
+
+      if (networkData.eth2) {
+        const eth2Status = document.getElementById("eth2-status");
+        if (networkData.eth2.link) {
+          eth2Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+        } else {
+          eth2Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+        }
+      }
+
+      if (networkData.eth3) {
+        const eth3Status = document.getElementById("eth3-status");
+        if (networkData.eth3.link) {
+          eth3Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+        } else {
+          eth3Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+        }
+      }
+
+      // Update driver status
+      if (networkData.driver) {
+        const driverStatus = document.getElementById("driver-status");
+        if (networkData.driver.loaded) {
+          driverStatus.innerHTML = '<span style="color: var(--success)">✓ Loaded</span>';
+        } else {
+          driverStatus.innerHTML = '<span style="color: var(--error)">✗ Not Loaded</span>';
+        }
+      }
+
+      // Update IP address
+      if (networkData.ip) {
+        document.getElementById("ip-address").textContent = networkData.ip;
+      }
+    }
+
+    (async function () {
+      changeTarget();
+      await getSystemInfo();
+      await getNetworkInfo();
+
+      // Check if we're in recovery mode
+      try {
+        var response = await fetch("/recovery");
+        if (response.ok) {
+          var data = await response.json();
+          if (data && data.in_recovery) {
+            log("System is in recovery mode");
+          }
+        }
+      } catch (err) {
+        // Recovery endpoint might not exist, that's okay
+      }
+    })();
+  </script>
 </body>
+
 </html>
