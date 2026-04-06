@@ -34,7 +34,7 @@ jobs:
         file u-boot.bin
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: u-boot-xr1710g
         path: |
