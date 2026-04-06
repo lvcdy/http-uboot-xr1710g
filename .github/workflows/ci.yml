@@ -84,7 +84,6 @@ jobs:
         path: |
           build/u-boot
           build/u-boot.bin
-          build/u-boot.elf
           build/u-boot.srec
           build/u-boot.map
           build/System.map
