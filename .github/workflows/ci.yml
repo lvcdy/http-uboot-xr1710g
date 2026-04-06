@@ -1,10 +1,7 @@
 name: U-Boot CI for XR1710G
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
