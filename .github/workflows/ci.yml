@@ -37,9 +37,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: u-boot-xr1710g
-        path:
-          - u-boot
-          - u-boot.bin
-          - u-boot.elf
-          - u-boot.srec
-          - u-boot.img
+        path: |
+          u-boot
+          u-boot.bin
+          u-boot.elf
+          u-boot.srec
+          u-boot.img
