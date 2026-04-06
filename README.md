@@ -1,182 +1,324 @@
-# U-Boot XR1710G 项目分析
+# U-Boot XR1710G 项目说明
 
-## 项目概述
+本文档聚焦本仓库中 XR1710G 平台的实现细节，重点说明四件事：
 
-U-Boot是一个功能强大的开源引导加载程序，专为嵌入式系统设计，支持多种处理器架构，包括PowerPC、ARM、MIPS等。本项目是U-Boot针对XR1710G平台的移植版本。
+1. U-Boot 如何为 XR1710G 构建
+2. 板级功能如何实现（MAC、factory、恢复按键等）
+3. HTTP 恢复界面如何与 U-Boot 主流程联动
+4. 驱动、设备树、分区和环境变量之间的关系
 
-### 主要功能
+## 1. 平台与代码入口
 
-- 硬件初始化和测试
-- 引导操作系统（如Linux）
-- 支持多种引导方式（网络、存储设备等）
-- 提供命令行界面进行系统管理
-- 支持设备树（Device Tree）
-- 支持多种文件系统和存储设备
+### 1.1 目标平台
 
-## 项目结构
+- SoC 平台：Airoha AN7581（ARM64）
+- 机型：XR1710G
+- 代码中常见兼容串：`econet,xr1710g`、`gemtek,xr1710g`
 
-U-Boot项目采用模块化设计，主要目录结构如下：
+说明：仓库中未出现 `brightspeed` 字符串。代码层面以 XR1710G 硬件平台识别，运营商品牌通常不直接写入源码。
 
-| 目录 | 功能 |
-|------|------|
-| api/ | 应用程序接口 |
-| arch/ | 架构相关代码 |
-| boot/ | 引导相关功能 |
-| cmd/ | 命令行命令实现 |
-| common/ | 通用功能实现 |
-| disk/ | 磁盘操作相关 |
-| doc/ | 文档 |
-| dts/ | 设备树源码 |
-| env/ | 环境变量管理 |
-| fs/ | 文件系统支持 |
-| include/ | 头文件 |
-| lib/ | 通用库函数 |
-| net/ | 网络相关功能 |
-| post/ | 开机自检 |
-| scripts/ | 构建脚本 |
-| test/ | 测试代码 |
-| tools/ | 工具程序 |
+### 1.2 关键代码路径
 
-## 核心功能模块
+- 板级主逻辑：`board/airoha/an7581/an7581_rfb.c`
+- 板级默认环境：`board/airoha/an7581/xr1710g.env`
+- defconfig：`configs/xr1710g_defconfig`
+- HTTP 恢复命令入口：`cmd/http_recovery.c`
+- HTTP 恢复核心实现：`net/lwip/httpd_recovery.c`
+- lwIP 网络收发桥接：`net/lwip/net-lwip.c`
+- U-Boot 覆盖设备树：`arch/arm/dts/xr1710g-u-boot.dtsi`
+- 上游设备树基底：`dts/upstream/src/arm64/airoha/xr1710g.dts`
 
-### 1. 启动流程
+## 2. 构建与配置（XR1710G）
 
-U-Boot的启动流程主要包括以下阶段：
-
-1. **硬件初始化**：设置CPU、内存控制器、时钟等
-2. **环境变量初始化**：加载和解析环境变量
-3. **引导设备初始化**：初始化存储设备、网络等
-4. **自动引导**：根据配置自动引导操作系统
-5. **命令行界面**：如果自动引导失败或被中断，进入命令行界面
-
-启动流程的核心代码位于`common/main.c`中的`main_loop`函数。
-
-### 2. 引导功能
-
-U-Boot支持多种引导方式，核心引导功能在`boot/bootm.c`中实现：
-
-- **bootm**：引导传统格式的镜像
-- **bootz**：引导压缩的Linux镜像
-- **booti**：引导ARM64 Linux镜像
-- **bootefi**：引导EFI镜像
-
-引导过程包括镜像验证、解压缩、加载到内存、传递启动参数等步骤。
-
-### 3. 命令行界面
-
-U-Boot提供了丰富的命令行命令，位于`cmd/`目录下，主要包括：
-
-- **系统管理**：reset、version、help等
-- **内存操作**：md、mw、mm等
-- **存储操作**：flash、nand、mmc等
-- **网络操作**：ping、tftp、dhcp等
-- **引导相关**：bootm、bootz、booti等
-- **环境变量**：setenv、printenv、saveenv等
-
-### 4. 设备树支持
-
-U-Boot支持设备树（Device Tree），用于描述硬件配置，核心功能在`dts/`目录和相关文件中实现。
-
-### 5. 环境变量管理
-
-环境变量用于存储配置信息，如引导参数、网络配置等，管理功能在`env/`目录中实现。
-
-## 技术架构
-
-U-Boot采用分层架构设计：
-
-1. **硬件抽象层**：针对不同处理器架构和板卡的底层实现
-2. **核心功能层**：实现引导、命令行、存储等核心功能
-3. **应用层**：提供各种命令和工具
-
-### 关键组件
-
-- **镜像格式**：支持多种镜像格式，包括传统格式、FIT（Flattened Image Tree）格式、Android boot镜像等
-- **设备驱动**：支持各种存储设备、网络设备、输入输出设备等
-- **配置系统**：基于Kconfig的配置系统，支持灵活的功能选择
-- **构建系统**：基于Makefile的构建系统，支持交叉编译
-
-## 配置和构建
-
-### 配置
-
-U-Boot使用Kconfig配置系统，通过以下命令进行配置：
-
-```bash
-make <board_name>_defconfig
-```
-
-对于XR1710G平台，使用：
+### 2.1 配置
 
 ```bash
 make xr1710g_defconfig
 ```
 
-### 构建
-
-配置完成后，使用以下命令构建U-Boot：
+### 2.2 编译
 
 ```bash
-make
+make -j$(nproc)
 ```
 
-如果需要交叉编译，需要设置`CROSS_COMPILE`环境变量：
+### 2.3 交叉编译
+
+本目标是 ARM64，建议使用 AArch64 工具链前缀，例如：
 
 ```bash
-export CROSS_COMPILE=arm-linux-gnueabi-
-make
+export CROSS_COMPILE=aarch64-linux-gnu-
+make xr1710g_defconfig
+make -j$(nproc)
 ```
 
-## 开发和修改指南
+`configs/xr1710g_defconfig` 的关键项：
 
-### 修改步骤
+- `CONFIG_ARM64=y`
+- `CONFIG_TARGET_AN7581=y`
+- `CONFIG_DEFAULT_DEVICE_TREE="airoha/xr1710g"`
+- `CONFIG_NET_LWIP=y`
+- `CONFIG_HTTPD_RECOVERY=y`
+- `CONFIG_MTD_SPI_NAND=y`
+- `CONFIG_MTD_UBI=y`
+- `CONFIG_AIROHA_ETH=y`
+- `CONFIG_AIROHA_SNFI_SPI=y`
 
-1. **了解代码结构**：熟悉U-Boot的目录结构和核心功能
-2. **配置修改**：根据需要修改配置文件或使用Kconfig界面
-3. **代码修改**：修改相应的源代码文件
-4. **构建测试**：构建并测试修改后的代码
-5. **调试**：使用U-Boot的调试功能进行调试
+### 2.4 通过 TTL 刷入这份 U-Boot
 
-### 常用修改点
+本节说明如何通过 TTL 串口进入 U-Boot 控制台并刷写本仓库编译出的 `u-boot.bin`。
 
-- **板卡支持**：修改`board/`目录下的板卡相关代码
-- **设备驱动**：修改`drivers/`目录下的驱动代码
-- **引导参数**：修改默认环境变量或引导脚本
-- **命令扩展**：在`cmd/`目录下添加新命令
+推荐流程是 TTL 负责控制台操作，镜像通过 TFTP 下载到内存后再写入 SPI NAND。
 
-### 调试技巧
+#### 2.4.1 准备工作
 
-- **串口调试**：通过串口查看U-Boot的输出信息
-- **网络调试**：使用网络命令进行网络相关调试
-- **内存调试**：使用内存操作命令查看和修改内存
-- **环境变量**：使用环境变量保存调试信息
+1. 硬件连接
 
-## 常见问题与解决方案
+- USB 转 TTL（3.3V 电平）连接开发板 UART（TX/RX/GND）
+- 串口参数通常为 `115200 8N1`
 
-### 引导失败
+2. 产物准备
 
-- **检查引导参数**：确保引导参数正确
-- **检查镜像格式**：确保镜像格式与U-Boot支持的格式匹配
-- **检查设备树**：确保设备树与硬件匹配
+- 在主机编译得到 `u-boot.bin`
 
-### 网络问题
+3. 网络准备（用于推荐方式）
 
-- **检查网络配置**：确保IP地址、网关等配置正确
-- **检查硬件连接**：确保网络线缆连接正常
-- **检查驱动**：确保网络驱动正确加载
+- 主机启动 TFTP 服务，并把 `u-boot.bin` 放到 TFTP 根目录
+- 开发板网口与主机可互通
 
-### 存储设备问题
+#### 2.4.2 进入 U-Boot 命令行
 
-- **检查设备连接**：确保存储设备连接正常
-- **检查文件系统**：确保文件系统格式正确
-- **检查驱动**：确保存储设备驱动正确加载
+1. 上电并在串口终端中打断自动启动
+2. 进入 `U-Boot>` 提示符
 
-## 总结
+建议先查看目标变量：
 
-U-Boot是一个功能强大、灵活可扩展的引导加载程序，为嵌入式系统提供了可靠的引导解决方案。通过本项目分析，您应该对U-Boot的结构、功能和使用方法有了更深入的了解，便于进行后续的修改和扩展。
+```bash
+printenv recovery_dev_uboot uboot_ofs recovery_size_uboot loadaddr
+```
 
-## 参考资料
+本项目默认 U-Boot 写入目标为：
 
-- [U-Boot官方文档](https://www.denx.de/wiki/U-Boot)
-- [U-Boot源代码](https://source.denx.de/u-boot/u-boot)
-- [嵌入式Linux系统开发](https://www.embeddedlinux.org.cn/)
+- 设备：`spi-nand0`
+- 偏移：`0x600000`
+- 大小上限：`0x100000`
+
+#### 2.4.3 方式 A：TTL + TFTP 刷写（推荐）
+
+1. 设置网络参数（示例）：
+
+```bash
+setenv ipaddr 192.168.1.2
+setenv serverip 192.168.1.10
+ping ${serverip}
+```
+
+2. 下载镜像到内存：
+
+```bash
+tftpboot ${loadaddr} u-boot.bin
+```
+
+3. 检查大小，确保不超过 `recovery_size_uboot`（默认 `0x100000`）
+
+```bash
+echo ${filesize}
+```
+
+4. 擦除并写入：
+
+```bash
+mtd erase ${recovery_dev_uboot} ${uboot_ofs} ${recovery_size_uboot}
+mtd write ${recovery_dev_uboot} ${loadaddr} ${uboot_ofs} ${filesize}
+```
+
+5. 回读校验（建议）：
+
+```bash
+setexpr verify_addr ${loadaddr} + 0x200000
+mtd read ${recovery_dev_uboot} ${verify_addr} ${uboot_ofs} ${filesize}
+cmp.b ${loadaddr} ${verify_addr} ${filesize}
+```
+
+6. 重启验证：
+
+```bash
+reset
+```
+
+#### 2.4.4 方式 B：纯 TTL 串口传输刷写（可选）
+
+如果当前环境不方便走 TFTP，可用串口传输命令（例如 `loadx`/`loady`，取决于当前镜像是否启用）。
+
+示例（若 `loady` 可用）：
+
+```bash
+loady ${loadaddr}
+```
+
+随后在串口工具中发送 `u-boot.bin`（YMODEM），传输完成后重复方式 A 的第 3~6 步执行擦写和校验。
+
+#### 2.4.5 风险与注意事项
+
+1. 必须确认电平是 3.3V，禁止 5V TTL。
+2. 擦写前确认目标设备、偏移和长度，避免误擦 `vendor/ubi` 区域。
+3. `filesize` 不应大于 `recovery_size_uboot`。
+4. 刷写过程中严禁断电。
+5. 建议保留一种应急恢复路径（例如恢复按键 + HTTP 恢复）。
+
+## 3. 启动与恢复总流程
+
+### 3.1 默认启动路径
+
+`board/airoha/an7581/xr1710g.env` 默认：
+
+- `bootcmd=run boot_ubi || http_recovery`
+
+含义：
+
+1. 先尝试从 UBI 的 `fit` 卷引导
+2. 若失败，自动进入 HTTP 恢复
+
+### 3.2 按键触发恢复
+
+在 `board_late_init()` 中会检测 `recovery-gpios`：
+
+1. 同步运行时 MAC
+2. 同步 factory 数据
+3. 如果恢复按键按下：设置 `ipaddr/netmask/gatewayip`
+4. 直接调用 `run_http_recovery()`
+
+即使 `bootcmd` 还未执行，按键也可强制进入 Web 恢复。
+
+## 4. HTTP 恢复与 U-Boot 的耦合点
+
+### 4.1 编译耦合
+
+- `net/lwip/Kconfig` 提供 `CONFIG_HTTPD_RECOVERY`
+- `cmd/Makefile` 在该开关下编译 `http_recovery.o`
+- `net/lwip/Makefile` 在该开关下编译 `httpd_recovery.o`
+
+### 4.2 命令入口
+
+`cmd/http_recovery.c` 的命令 `http_recovery` 会：
+
+1. 设置静态网络参数（`192.168.255.1/24`）
+2. 调用 `run_http_recovery()`
+
+### 4.3 运行时主循环
+
+`run_http_recovery()` 主要步骤：
+
+1. 初始化恢复状态（进度、标志位、LED）
+2. 启动以太网与 lwIP netif
+3. 启动内置 DHCP server（向连接设备发地址）
+4. 启动 lwIP httpd
+5. 轮询收包与超时事件
+6. 收到上传后执行刷写
+7. 成功后延时重启，失败则保持服务运行
+
+### 4.4 页面与接口
+
+动态接口通过 `fs_open_custom()` 提供：
+
+- `/status`：返回 JSON 进度（擦除/写入/总量/阶段）
+- `/about`：返回 U-Boot 版本信息
+
+上传处理：
+
+- `POST /upload/firmware`
+- `POST /upload/uboot`
+
+上传数据先放到 RAM，再触发刷写，避免在 HTTP 回包期间阻塞网络。
+
+## 5. 刷写策略（MTD/UBI）
+
+### 5.1 目标选择优先级
+
+恢复代码会根据环境变量解析目标：
+
+- 目标名：`recovery_mtd` / `recovery_mtd_uboot`
+- 原始设备：`recovery_dev` / `recovery_dev_uboot`
+- 大小上限：`recovery_size` / `recovery_size_uboot`
+- 偏移：`recovery_ofs` / `uboot_ofs`
+- UBI 分区：`recovery_ubi_part` / `recovery_ubi_part_uboot`
+
+流程上优先尝试可用的 MTD/UBI 目标，失败再做回退。
+
+### 5.2 MTD 写入路径
+
+1. 按擦除块大小对齐并整区擦除
+2. 分块写入（循环写）
+3. 更新进度与状态
+
+### 5.3 UBI 写入路径
+
+1. 选择目标 volume（默认 firmware 对应 `fit`，uboot 对应 `uboot`）
+2. 必要时创建或扩容 volume
+3. 处理保留卷逻辑（环境卷、factory 等）
+4. `ubi_volume_write` 写入
+
+## 6. 板级功能实现细节
+
+### 6.1 MAC 地址与 FDT 修补
+
+`an7581_rfb.c` 中 XR1710G 专有逻辑会：
+
+1. 从 vendor 区域读取 DSD 数据
+2. 提取 `lan_mac` / `wan_mac`
+3. 写入环境变量 `ethaddr` / `eth1addr`
+4. 在 `ft_board_setup()` 中修补 FDT 网卡节点的 `mac-address`
+
+### 6.2 factory 数据同步
+
+`xr1710g_sync_factory()` 会把 DSD EEPROM + MAC 信息同步到 UBI `factory` 卷，确保运行时和恢复流程使用一致的校准/地址数据。
+
+### 6.3 恢复按键与 LED
+
+- 恢复按键来自设备树 `recovery-gpios`
+- 恢复期间可使用状态 LED（优先）或链路 LED（回退）显示活动
+
+## 7. 设备树与分区关系
+
+`dts/upstream/src/arm64/airoha/xr1710g.dts` 定义了 SPI NAND 分区与 UBI 卷：
+
+- 固定分区：`vendor`、`chainloader`、`ubi`、`reserved_bmt`
+- UBI 卷：`ubootenv`、`ubootenv2`、`uboot`、`fit`、`factory`
+
+这正对应了：
+
+- 引导路径从 `fit` 卷读取系统镜像
+- 环境变量存放在 `ubootenv/ubootenv2`
+- HTTP 恢复可写 `fit`（固件）与 `uboot`（引导器）
+
+## 8. 常用验证与调试建议
+
+### 8.1 构建后基础检查
+
+1. 确认 `u-boot.bin` 已生成
+2. 启动串口确认版本和板型匹配
+3. `printenv` 检查 `bootcmd` 与 `recovery_*` 变量
+
+### 8.2 恢复功能联调
+
+1. 手动执行 `http_recovery`
+2. 主机接入后访问 `http://192.168.255.1/`
+3. 轮询 `/status` 观察擦写阶段变化
+4. 上传 `firmware` 或 `uboot` 镜像验证流程
+
+### 8.3 失败场景定位
+
+- 无网络：先查 `CONFIG_AIROHA_ETH`、MDIO/PHY DTS、网线链路
+- 上传失败：检查 `recovery_max`、目标分区大小和 RAM 缓冲地址
+- 写入失败：重点看 MTD 擦除/写入返回码或 UBI 卷可用空间
+
+## 9. 总结
+
+本仓库的 XR1710G 方案不是“独立网页升级程序”，而是把 Web 恢复完整嵌入 U-Boot：
+
+1. 配置层启用 lwIP + HTTPD_RECOVERY
+2. 板级层提供恢复按键、MAC/factory 同步
+3. 启动层提供启动失败回退到 Web 恢复
+4. 恢复层实现上传、状态、刷写和自动重启闭环
+
+这使 XR1710G 在量产与现场维护中可通过统一的 U-Boot 恢复路径完成固件和引导器修复。

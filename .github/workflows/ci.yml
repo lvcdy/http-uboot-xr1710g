@@ -1,11 +1,38 @@
 name: U-Boot CI for XR1710G
 
 on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'configs/xr1710g_defconfig'
+      - 'board/airoha/**'
+      - 'arch/arm/**'
+      - 'drivers/**'
+      - 'net/**'
+      - 'cmd/**'
+      - 'Makefile'
+      - 'Kconfig'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/ci.yml'
+      - 'configs/xr1710g_defconfig'
+      - 'board/airoha/**'
+      - 'arch/arm/**'
+      - 'drivers/**'
+      - 'net/**'
+      - 'cmd/**'
+      - 'Makefile'
+      - 'Kconfig'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CROSS_COMPILE: aarch64-linux-gnu-
+      O: build
     
     steps:
     - name: Checkout code
@@ -14,29 +41,50 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential gcc-aarch64-linux-gnu
+        sudo apt-get install -y \
+          build-essential \
+          gcc-aarch64-linux-gnu \
+          bison \
+          flex \
+          swig \
+          python3-dev \
+          python3-setuptools \
+          python3-pyelftools \
+          device-tree-compiler \
+          libssl-dev
     
     - name: Configure U-Boot for XR1710G
       run: |
-        make xr1710g_defconfig CROSS_COMPILE=aarch64-linux-gnu-
+        rm -rf ${O}
+        make O=${O} xr1710g_defconfig
+
+    - name: Validate defconfig resolved to XR1710G target
+      run: |
+        grep -q '^CONFIG_TARGET_AN7581=y' ${O}/.config
+        grep -q '^CONFIG_ARCH_AIROHA=y' ${O}/.config
+        grep -q '^CONFIG_ARM64=y' ${O}/.config
     
     - name: Build U-Boot
       run: |
-        make -j$(nproc) CROSS_COMPILE=aarch64-linux-gnu-
+        make O=${O} -j$(nproc)
     
     - name: Verify build output
       run: |
-        ls -la u-boot*
-        file u-boot
-        file u-boot.bin
+        ls -la ${O}/u-boot*
+        test -f ${O}/u-boot
+        test -f ${O}/u-boot.bin
+        file ${O}/u-boot
+        file ${O}/u-boot.bin
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: u-boot-xr1710g
+        if-no-files-found: error
         path: |
-          u-boot
-          u-boot.bin
-          u-boot.elf
-          u-boot.srec
-          u-boot.img
+          build/u-boot
+          build/u-boot.bin
+          build/u-boot.elf
+          build/u-boot.srec
+          build/u-boot.map
+          build/System.map
