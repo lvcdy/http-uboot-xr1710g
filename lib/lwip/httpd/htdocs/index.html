@@ -67,6 +67,31 @@
       color: var(--text-muted);
     }
 
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .lang-switch {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      width: auto;
+      box-shadow: none;
+      cursor: pointer;
+    }
+
+    .lang-switch:hover {
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+
     h1 {
       margin: 12px 0 10px;
       font-size: 40px;
@@ -217,6 +242,48 @@
       font-size: 14px;
     }
 
+    .partition-layout {
+      margin-top: 20px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--bg-tertiary);
+      overflow: hidden;
+    }
+
+    .partition-layout h3 {
+      margin: 0;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .partition-layout table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .partition-layout th,
+    .partition-layout td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: top;
+    }
+
+    .partition-layout th {
+      color: var(--text-muted);
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .partition-layout tr:last-child td {
+      border-bottom: 0;
+    }
+
     .progress {
       display: none;
       margin-top: 24px;
@@ -325,71 +392,108 @@
 <body>
   <div class="shell">
     <section class="hero">
-      <p class="eyebrow">XR1710G Recovery</p>
-      <h1>Upload firmware or chainloader</h1>
-      <p class="lead">Recovery endpoint: <strong>192.168.255.1</strong></p>
-      <p class="note">`firmware` writes `ubi:fit`, `uboot` writes the raw chainloader slot.</p>
+      <div class="hero-top">
+        <p class="eyebrow" id="i18n-eyebrow">XR1710G Recovery</p>
+        <button class="lang-switch" type="button" id="lang-btn" onclick="switchLanguage()">中文</button>
+      </div>
+      <h1 id="i18n-hero-title">Upload firmware or chainloader</h1>
+      <p class="lead"><span id="i18n-recovery-endpoint">Recovery endpoint:</span> <strong>192.168.255.1</strong></p>
+      <p class="note" id="i18n-note">firmware writes ubi:fit, uboot writes the raw chainloader slot.</p>
 
       <div class="system-info" id="system-info">
-        <h3>System Information</h3>
+        <h3 id="i18n-system-info-title">System Information</h3>
         <div class="info-grid">
           <div class="info-item">
-            <span class="info-label">U-Boot Version:</span>
+            <span class="info-label" id="i18n-uboot-version-label">U-Boot Version:</span>
             <span class="info-value" id="uboot-version">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Board Model:</span>
+            <span class="info-label" id="i18n-board-model-label">Board Model:</span>
             <span class="info-value" id="board-model">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">MAC Address:</span>
+            <span class="info-label" id="i18n-mac-address-label">MAC Address:</span>
             <span class="info-value" id="mac-address">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Free Space:</span>
+            <span class="info-label" id="i18n-free-space-label">Free Space:</span>
             <span class="info-value" id="free-space">Loading...</span>
           </div>
         </div>
       </div>
 
       <div class="network-info" id="network-info">
-        <h3>Network Status</h3>
+        <h3 id="i18n-network-status-title">Network Status</h3>
         <div class="info-grid">
           <div class="info-item">
-            <span class="info-label">Ethernet 0:</span>
+            <span class="info-label" id="i18n-eth0-label">Ethernet 0:</span>
             <span class="info-value" id="eth0-status">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Ethernet 1:</span>
+            <span class="info-label" id="i18n-eth1-label">Ethernet 1:</span>
             <span class="info-value" id="eth1-status">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Ethernet 2:</span>
+            <span class="info-label" id="i18n-eth2-label">Ethernet 2:</span>
             <span class="info-value" id="eth2-status">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Ethernet 3:</span>
+            <span class="info-label" id="i18n-eth3-label">Ethernet 3:</span>
             <span class="info-value" id="eth3-status">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Driver Status:</span>
+            <span class="info-label" id="i18n-driver-status-label">Driver Status:</span>
             <span class="info-value" id="driver-status">Loading...</span>
           </div>
           <div class="info-item">
-            <span class="info-label">IP Address:</span>
+            <span class="info-label" id="i18n-ip-address-label">IP Address:</span>
             <span class="info-value" id="ip-address">Loading...</span>
           </div>
         </div>
       </div>
 
+      <div class="partition-layout">
+        <h3 id="i18n-partition-layout-title">分区布局</h3>
+        <table>
+          <thead>
+            <tr>
+              <th id="i18n-partition-col">分区</th>
+              <th id="i18n-offset-col">偏移</th>
+              <th id="i18n-size-col">大小</th>
+              <th id="i18n-desc-col">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>vendor</td>
+              <td>0x000000</td>
+              <td>6 MiB</td>
+              <td id="i18n-vendor-desc">原厂引导（勿动）</td>
+            </tr>
+            <tr>
+              <td>chainloader</td>
+              <td>0x600000</td>
+              <td>1 MiB</td>
+              <td id="i18n-chainloader-desc">U-Boot（uboot 目标）</td>
+            </tr>
+            <tr>
+              <td>ubi</td>
+              <td>0x700000</td>
+              <td>~503 MiB</td>
+              <td id="i18n-ubi-desc">OpenWrt 系统（firmware 目标）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="targets">
         <div class="target active" id="card-firmware" onclick="switchTarget('firmware')">
           <h2>firmware</h2>
-          <p>OpenWrt FIT image</p>
+          <p id="i18n-firmware-desc">OpenWrt FIT image</p>
         </div>
         <div class="target" id="card-uboot" onclick="switchTarget('uboot')">
           <h2>uboot</h2>
-          <p>`xr1710g-chainloader-slot.bin`</p>
+          <p id="i18n-uboot-desc">xr1710g-chainloader-slot.bin</p>
         </div>
       </div>
 
@@ -403,22 +507,22 @@
       </div>
 
       <div class="file-info" id="file-info" style="display: none;">
-        <h3>File Information</h3>
+        <h3 id="i18n-file-info-title">File Information</h3>
         <div class="info-grid">
           <div class="info-item">
-            <span class="info-label">File Name:</span>
+            <span class="info-label" id="i18n-file-name-label">File Name:</span>
             <span class="info-value" id="file-name">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">File Size:</span>
+            <span class="info-label" id="i18n-file-size-label">File Size:</span>
             <span class="info-value" id="file-size">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">File Type:</span>
+            <span class="info-label" id="i18n-file-type-label">File Type:</span>
             <span class="info-value" id="file-type">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Validation:</span>
+            <span class="info-label" id="i18n-validation-label">Validation:</span>
             <span class="info-value" id="file-validation">-</span>
           </div>
         </div>
@@ -426,14 +530,14 @@
 
       <div class="progress" id="progress">
         <div class="progress-row">
-          <div class="progress-label">Erase</div>
+          <div class="progress-label" id="i18n-erase-label">Erase</div>
           <div class="progress-bar">
             <div class="progress-fill inactive" id="erase-fill"></div>
             <div class="progress-text" id="erase-text">0%</div>
           </div>
         </div>
         <div class="progress-row">
-          <div class="progress-label">Write</div>
+          <div class="progress-label" id="i18n-write-label">Write</div>
           <div class="progress-bar">
             <div class="progress-fill inactive" id="write-fill"></div>
             <div class="progress-text" id="write-text">0%</div>
@@ -441,7 +545,8 @@
         </div>
       </div>
 
-      <p id="reboot-msg">Flash complete. Rebooting in <strong id="reboot-sec">3</strong>s.</p>
+      <p id="reboot-msg"><span id="i18n-reboot-msg">Flash complete. Rebooting in</span> <strong
+          id="reboot-sec">3</strong><span id="i18n-reboot-seconds">s.</span></p>
       <div id="log"></div>
       <p class="meta" id="meta">Ready</p>
     </section>
@@ -502,6 +607,224 @@
     var pollTimer = null;
     var lastPhase = 0;
     var countdownStarted = false;
+    var currentLang = "zh";
+    var i18n = {
+      zh: {
+        pageTitle: "XR1710G 恢复",
+        eyebrow: "XR1710G 恢复",
+        heroTitle: "上传 firmware 或 chainloader",
+        recoveryEndpoint: "恢复地址:",
+        note: "firmware 写入 ubi:fit，uboot 写入原始 chainloader 槽位。",
+        systemInfoTitle: "系统信息",
+        ubootVersionLabel: "U-Boot 版本:",
+        boardModelLabel: "板卡型号:",
+        macAddressLabel: "MAC 地址:",
+        freeSpaceLabel: "可用空间:",
+        networkStatusTitle: "网络状态",
+        eth0Label: "以太网 0:",
+        eth1Label: "以太网 1:",
+        eth2Label: "以太网 2:",
+        eth3Label: "以太网 3:",
+        driverStatusLabel: "驱动状态:",
+        ipAddressLabel: "IP 地址:",
+        partitionLayoutTitle: "分区布局",
+        partitionCol: "分区",
+        offsetCol: "偏移",
+        sizeCol: "大小",
+        descCol: "说明",
+        vendorDesc: "原厂引导（勿动）",
+        chainloaderDesc: "U-Boot（uboot 目标）",
+        ubiDesc: "OpenWrt 系统（firmware 目标）",
+        firmwareDesc: "OpenWrt FIT 镜像",
+        ubootDesc: "xr1710g-chainloader-slot.bin",
+        uploadBtn: "上传",
+        fileInfoTitle: "文件信息",
+        fileNameLabel: "文件名:",
+        fileSizeLabel: "文件大小:",
+        fileTypeLabel: "文件类型:",
+        validationLabel: "校验:",
+        eraseLabel: "擦除",
+        writeLabel: "写入",
+        rebootMsg: "刷写完成，正在重启，剩余",
+        rebootSeconds: "秒。",
+        ready: "就绪",
+        loading: "加载中...",
+        binaryFile: "二进制文件",
+        noFileSelected: "未选择文件。",
+        fileTooLarge: "✗ 文件过大，最大支持 32MB",
+        validFit: "✓ 有效 FIT 镜像",
+        invalidFit: "✗ 文件类型不正确，需为 .bin 或 .itb",
+        validChainloader: "✓ 有效 chainloader",
+        invalidChainloader: "✗ 文件不正确，需为 chainloader 的 .bin 文件",
+        erasingTarget: "正在擦除目标...",
+        writingTarget: "正在写入目标...",
+        uploadSuccessful: "上传成功。",
+        uploadFailed: "上传失败: ",
+        unknownError: "未知错误",
+        statusPollError: "状态轮询错误: ",
+        uploadingTo: "正在上传 ",
+        uploadingProgress: "上传进度",
+        uploadCompleted: "上传完成。",
+        uploadFailedLarge: "上传失败: 文件过大，最大支持 32MB",
+        serverResponded: "服务器返回 HTTP",
+        uploadFailedNetwork: "上传失败: 网络错误，请检查连接后重试。",
+        uploadFailedTimeout: "上传失败: 超时，较大文件可能需要更长时间。",
+        uploadError: "上传错误: ",
+        failedGetSystemInfo: "获取系统信息失败",
+        errorGetSystemInfo: "获取系统信息出错: ",
+        failedGetNetworkInfo: "获取网络信息失败",
+        errorGetNetworkInfo: "获取网络信息出错: ",
+        linkUp: "✓ 已连接",
+        linkDown: "✗ 未连接",
+        loaded: "✓ 已加载",
+        notLoaded: "✗ 未加载",
+        inRecoveryMode: "系统处于恢复模式",
+        langBtn: "EN"
+      },
+      en: {
+        pageTitle: "XR1710G Recovery",
+        eyebrow: "XR1710G Recovery",
+        heroTitle: "Upload firmware or chainloader",
+        recoveryEndpoint: "Recovery endpoint:",
+        note: "firmware writes ubi:fit, uboot writes the raw chainloader slot.",
+        systemInfoTitle: "System Information",
+        ubootVersionLabel: "U-Boot Version:",
+        boardModelLabel: "Board Model:",
+        macAddressLabel: "MAC Address:",
+        freeSpaceLabel: "Free Space:",
+        networkStatusTitle: "Network Status",
+        eth0Label: "Ethernet 0:",
+        eth1Label: "Ethernet 1:",
+        eth2Label: "Ethernet 2:",
+        eth3Label: "Ethernet 3:",
+        driverStatusLabel: "Driver Status:",
+        ipAddressLabel: "IP Address:",
+        partitionLayoutTitle: "Partition Layout",
+        partitionCol: "Partition",
+        offsetCol: "Offset",
+        sizeCol: "Size",
+        descCol: "Description",
+        vendorDesc: "Factory bootloader (do not modify)",
+        chainloaderDesc: "U-Boot (uboot target)",
+        ubiDesc: "OpenWrt system (firmware target)",
+        firmwareDesc: "OpenWrt FIT image",
+        ubootDesc: "xr1710g-chainloader-slot.bin",
+        uploadBtn: "Upload",
+        fileInfoTitle: "File Information",
+        fileNameLabel: "File Name:",
+        fileSizeLabel: "File Size:",
+        fileTypeLabel: "File Type:",
+        validationLabel: "Validation:",
+        eraseLabel: "Erase",
+        writeLabel: "Write",
+        rebootMsg: "Flash complete. Rebooting in",
+        rebootSeconds: "s.",
+        ready: "Ready",
+        loading: "Loading...",
+        binaryFile: "Binary file",
+        noFileSelected: "No file selected.",
+        fileTooLarge: "✗ File too large. Maximum size is 32MB",
+        validFit: "✓ Valid FIT image",
+        invalidFit: "✗ Invalid file type. Expected .bin or .itb",
+        validChainloader: "✓ Valid chainloader",
+        invalidChainloader: "✗ Invalid file. Expected chainloader bin file",
+        erasingTarget: "Erasing target...",
+        writingTarget: "Writing target...",
+        uploadSuccessful: "Upload successful.",
+        uploadFailed: "Upload failed: ",
+        unknownError: "Unknown error",
+        statusPollError: "Status poll error: ",
+        uploadingTo: "Uploading ",
+        uploadingProgress: "Uploading",
+        uploadCompleted: "Upload completed successfully.",
+        uploadFailedLarge: "Upload failed: File too large. Maximum size is 32MB",
+        serverResponded: "Server responded with HTTP",
+        uploadFailedNetwork: "Upload failed: Network error. Please check your connection and try again.",
+        uploadFailedTimeout: "Upload failed: Timeout. Large files may take longer to upload.",
+        uploadError: "Upload error: ",
+        failedGetSystemInfo: "Failed to get system info",
+        errorGetSystemInfo: "Error getting system info: ",
+        failedGetNetworkInfo: "Failed to get network info",
+        errorGetNetworkInfo: "Error getting network info: ",
+        linkUp: "✓ Link Up",
+        linkDown: "✗ Link Down",
+        loaded: "✓ Loaded",
+        notLoaded: "✗ Not Loaded",
+        inRecoveryMode: "System is in recovery mode",
+        langBtn: "中文"
+      }
+    };
+
+    function t(key) {
+      return (i18n[currentLang] && i18n[currentLang][key]) || key;
+    }
+
+    function setText(id, key) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = t(key);
+    }
+
+    function applyI18n() {
+      document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
+      document.title = t("pageTitle");
+      setText("i18n-eyebrow", "eyebrow");
+      setText("i18n-hero-title", "heroTitle");
+      setText("i18n-recovery-endpoint", "recoveryEndpoint");
+      setText("i18n-note", "note");
+      setText("i18n-system-info-title", "systemInfoTitle");
+      setText("i18n-uboot-version-label", "ubootVersionLabel");
+      setText("i18n-board-model-label", "boardModelLabel");
+      setText("i18n-mac-address-label", "macAddressLabel");
+      setText("i18n-free-space-label", "freeSpaceLabel");
+      setText("i18n-network-status-title", "networkStatusTitle");
+      setText("i18n-eth0-label", "eth0Label");
+      setText("i18n-eth1-label", "eth1Label");
+      setText("i18n-eth2-label", "eth2Label");
+      setText("i18n-eth3-label", "eth3Label");
+      setText("i18n-driver-status-label", "driverStatusLabel");
+      setText("i18n-ip-address-label", "ipAddressLabel");
+      setText("i18n-partition-layout-title", "partitionLayoutTitle");
+      setText("i18n-partition-col", "partitionCol");
+      setText("i18n-offset-col", "offsetCol");
+      setText("i18n-size-col", "sizeCol");
+      setText("i18n-desc-col", "descCol");
+      setText("i18n-vendor-desc", "vendorDesc");
+      setText("i18n-chainloader-desc", "chainloaderDesc");
+      setText("i18n-ubi-desc", "ubiDesc");
+      setText("i18n-firmware-desc", "firmwareDesc");
+      setText("i18n-uboot-desc", "ubootDesc");
+      setText("btn", "uploadBtn");
+      setText("i18n-file-info-title", "fileInfoTitle");
+      setText("i18n-file-name-label", "fileNameLabel");
+      setText("i18n-file-size-label", "fileSizeLabel");
+      setText("i18n-file-type-label", "fileTypeLabel");
+      setText("i18n-validation-label", "validationLabel");
+      setText("i18n-erase-label", "eraseLabel");
+      setText("i18n-write-label", "writeLabel");
+      setText("i18n-reboot-msg", "rebootMsg");
+      setText("i18n-reboot-seconds", "rebootSeconds");
+      if (document.getElementById("meta").textContent === "Ready" || document.getElementById("meta").textContent === "就绪")
+        setText("meta", "ready");
+      setText("lang-btn", "langBtn");
+      if (document.getElementById("uboot-version").textContent === "Loading..." || document.getElementById("uboot-version").textContent === "加载中...") {
+        setText("uboot-version", "loading");
+        setText("board-model", "loading");
+        setText("mac-address", "loading");
+        setText("free-space", "loading");
+        setText("eth0-status", "loading");
+        setText("eth1-status", "loading");
+        setText("eth2-status", "loading");
+        setText("eth3-status", "loading");
+        setText("driver-status", "loading");
+      }
+    }
+
+    function switchLanguage() {
+      currentLang = currentLang === "zh" ? "en" : "zh";
+      localStorage.setItem("recovery_lang", currentLang);
+      applyI18n();
+      validateFile();
+    }
 
     function log(msg) {
       var box = document.getElementById("log");
@@ -559,7 +882,7 @@
       fileInfo.style.display = "block";
       fileName.textContent = file.name;
       fileSize.textContent = formatFileSize(file.size);
-      fileType.textContent = file.type || 'Binary file';
+      fileType.textContent = file.type || t('binaryFile');
 
       // Validate file based on target
       let isValid = false;
@@ -568,7 +891,7 @@
       // Check file size (32MB limit by default)
       const MAX_FILE_SIZE = 32 * 1024 * 1024; // 32MB
       if (file.size > MAX_FILE_SIZE) {
-        validationMessage = '<span style="color: var(--error)">✗ File too large. Maximum size is 32MB</span>';
+        validationMessage = '<span style="color: var(--error)">' + t('fileTooLarge') + '</span>';
         fileValidation.innerHTML = validationMessage;
         btn.disabled = true;
         return;
@@ -578,17 +901,17 @@
         // Check for FIT image characteristics
         if (file.name.endsWith('.bin') || file.name.endsWith('.itb')) {
           isValid = true;
-          validationMessage = '<span style="color: var(--success)">✓ Valid FIT image</span>';
+          validationMessage = '<span style="color: var(--success)">' + t('validFit') + '</span>';
         } else {
-          validationMessage = '<span style="color: var(--error)">✗ Invalid file type. Expected .bin or .itb</span>';
+          validationMessage = '<span style="color: var(--error)">' + t('invalidFit') + '</span>';
         }
       } else if (target === "uboot") {
         // Check for chainloader file
         if (file.name.includes('chainloader') && file.name.endsWith('.bin')) {
           isValid = true;
-          validationMessage = '<span style="color: var(--success)">✓ Valid chainloader</span>';
+          validationMessage = '<span style="color: var(--success)">' + t('validChainloader') + '</span>';
         } else {
-          validationMessage = '<span style="color: var(--error)">✗ Invalid file. Expected chainloader bin file</span>';
+          validationMessage = '<span style="color: var(--error)">' + t('invalidChainloader') + '</span>';
         }
       }
 
@@ -610,7 +933,7 @@
         writeFill.style.width = "0%";
         writeText.textContent = "0%";
         if (lastPhase !== 1) {
-          log("Erasing target...");
+          log(t("erasingTarget"));
           lastPhase = 1;
         }
       } else if (phase === 2) {
@@ -621,7 +944,7 @@
         writeFill.style.width = pct + "%";
         writeText.textContent = pct + "%" + detail;
         if (lastPhase !== 2) {
-          log("Writing target...");
+          log(t("writingTarget"));
           lastPhase = 2;
         }
       } else if (phase === 3) {
@@ -673,17 +996,17 @@
           setProgress(phase, pct, detail);
         } else if (data.ok) {
           setProgress(3, 100, "");
-          log("Upload successful.");
+          log(t("uploadSuccessful"));
           startCountdown(3);
           clearInterval(pollTimer);
         } else if (data.error) {
-          log("Upload failed: " + (data.error.message || "Unknown error"));
+          log(t("uploadFailed") + (data.error.message || t("unknownError")));
           clearInterval(pollTimer);
           showProgress(false);
           document.getElementById("btn").disabled = false;
         }
       } catch (err) {
-        log("Status poll error: " + err.message);
+        log(t("statusPollError") + err.message);
       }
     }
 
@@ -693,7 +1016,7 @@
       var target = document.getElementById("t").value;
 
       if (!file) {
-        log("No file selected.");
+        log(t("noFileSelected"));
         return;
       }
 
@@ -702,7 +1025,7 @@
       lastPhase = 0;
       countdownStarted = false;
       document.getElementById("reboot-msg").style.display = "none";
-      log("Uploading " + file.name + " to " + target + "...");
+      log(t("uploadingTo") + file.name + " -> " + target + "...");
       log(`File size: ${formatFileSize(file.size)}`);
       if (pollTimer)
         clearInterval(pollTimer);
@@ -720,20 +1043,20 @@
             const percent = Math.round((e.loaded / e.total) * 100);
             const uploadedSize = formatFileSize(e.loaded);
             const totalSize = formatFileSize(e.total);
-            log(`Uploading: ${percent}% (${uploadedSize}/${totalSize})`);
+            log(`${t('uploadingProgress')}: ${percent}% (${uploadedSize}/${totalSize})`);
           }
         });
 
         xhr.addEventListener('load', function () {
           if (xhr.status === 200) {
-            log("Upload completed successfully.");
+            log(t("uploadCompleted"));
           } else if (xhr.status === 413) {
-            log("Upload failed: File too large. Maximum size is 32MB");
+            log(t("uploadFailedLarge"));
             clearInterval(pollTimer);
             showProgress(false);
             btn.disabled = false;
           } else {
-            log(`Server responded with HTTP ${xhr.status}: ${xhr.statusText}`);
+            log(`${t('serverResponded')} ${xhr.status}: ${xhr.statusText}`);
             clearInterval(pollTimer);
             showProgress(false);
             btn.disabled = false;
@@ -741,14 +1064,14 @@
         });
 
         xhr.addEventListener('error', function () {
-          log("Upload failed: Network error. Please check your connection and try again.");
+          log(t("uploadFailedNetwork"));
           clearInterval(pollTimer);
           showProgress(false);
           btn.disabled = false;
         });
 
         xhr.addEventListener('timeout', function () {
-          log("Upload failed: Timeout. Large files may take longer to upload.");
+          log(t("uploadFailedTimeout"));
           clearInterval(pollTimer);
           showProgress(false);
           btn.disabled = false;
@@ -758,7 +1081,7 @@
         xhr.setRequestHeader('Content-Type', 'application/octet-stream');
         xhr.send(file);
       } catch (err) {
-        log("Upload error: " + err.message);
+        log(t("uploadError") + err.message);
         clearInterval(pollTimer);
         showProgress(false);
         btn.disabled = false;
@@ -769,7 +1092,7 @@
       try {
         var response = await fetch("/about");
         if (!response.ok) {
-          log("Failed to get system info");
+          log(t("failedGetSystemInfo"));
           return;
         }
         var data = await response.json();
@@ -797,7 +1120,7 @@
           updateNetworkInfo(data.network);
         }
       } catch (err) {
-        log("Error getting system info: " + err);
+        log(t("errorGetSystemInfo") + err);
       }
     }
 
@@ -805,13 +1128,13 @@
       try {
         var response = await fetch("/network");
         if (!response.ok) {
-          log("Failed to get network info");
+          log(t("failedGetNetworkInfo"));
           return;
         }
         var data = await response.json();
         updateNetworkInfo(data);
       } catch (err) {
-        log("Error getting network info: " + err);
+        log(t("errorGetNetworkInfo") + err);
       }
     }
 
@@ -820,36 +1143,36 @@
       if (networkData.eth0) {
         const eth0Status = document.getElementById("eth0-status");
         if (networkData.eth0.link) {
-          eth0Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+          eth0Status.innerHTML = '<span style="color: var(--success)">' + t('linkUp') + '</span>';
         } else {
-          eth0Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+          eth0Status.innerHTML = '<span style="color: var(--error)">' + t('linkDown') + '</span>';
         }
       }
 
       if (networkData.eth1) {
         const eth1Status = document.getElementById("eth1-status");
         if (networkData.eth1.link) {
-          eth1Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+          eth1Status.innerHTML = '<span style="color: var(--success)">' + t('linkUp') + '</span>';
         } else {
-          eth1Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+          eth1Status.innerHTML = '<span style="color: var(--error)">' + t('linkDown') + '</span>';
         }
       }
 
       if (networkData.eth2) {
         const eth2Status = document.getElementById("eth2-status");
         if (networkData.eth2.link) {
-          eth2Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+          eth2Status.innerHTML = '<span style="color: var(--success)">' + t('linkUp') + '</span>';
         } else {
-          eth2Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+          eth2Status.innerHTML = '<span style="color: var(--error)">' + t('linkDown') + '</span>';
         }
       }
 
       if (networkData.eth3) {
         const eth3Status = document.getElementById("eth3-status");
         if (networkData.eth3.link) {
-          eth3Status.innerHTML = '<span style="color: var(--success)">✓ Link Up</span>';
+          eth3Status.innerHTML = '<span style="color: var(--success)">' + t('linkUp') + '</span>';
         } else {
-          eth3Status.innerHTML = '<span style="color: var(--error)">✗ Link Down</span>';
+          eth3Status.innerHTML = '<span style="color: var(--error)">' + t('linkDown') + '</span>';
         }
       }
 
@@ -857,9 +1180,9 @@
       if (networkData.driver) {
         const driverStatus = document.getElementById("driver-status");
         if (networkData.driver.loaded) {
-          driverStatus.innerHTML = '<span style="color: var(--success)">✓ Loaded</span>';
+          driverStatus.innerHTML = '<span style="color: var(--success)">' + t('loaded') + '</span>';
         } else {
-          driverStatus.innerHTML = '<span style="color: var(--error)">✗ Not Loaded</span>';
+          driverStatus.innerHTML = '<span style="color: var(--error)">' + t('notLoaded') + '</span>';
         }
       }
 
@@ -870,6 +1193,10 @@
     }
 
     (async function () {
+      var savedLang = localStorage.getItem("recovery_lang");
+      if (savedLang === "zh" || savedLang === "en")
+        currentLang = savedLang;
+      applyI18n();
       changeTarget();
       await getSystemInfo();
       await getNetworkInfo();
@@ -880,7 +1207,7 @@
         if (response.ok) {
           var data = await response.json();
           if (data && data.in_recovery) {
-            log("System is in recovery mode");
+            log(t("inRecoveryMode"));
           }
         }
       } catch (err) {
